@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+
+message Error {
+	enum Code {
+		INTERNAL_SERVER_ERROR = 0;
+		NOT_FOUND = 1;
+		REQUEST_MALFORMED = 2;
+		UNAUTHORIZED = 3;
+		ALREADY_REGISTERED = 4;
+		BAD_CREDENTIALS = 5;
+	}
+	Code code = 1;
+	string message = 2;
+}
+
+message SaveResourceRequest {
+	string value = 6;
+}
+
+message ListResourceRequest {
+
+}
+
+message GetResourceRequest {
+	string resourceId = 1;
+}
+
+message DeleteResourceRequest {
+	string resourceId = 1;
+
+}
+
+message Resource {
+	string id = 1;
+	string value = 6;
+}
+
+message ResourceList {
+	repeated Resource list = 1;
+}
+
+service ResourceService {
+	rpc Save (SaveResourceRequest) returns (Resource) {
+		option (google.api.http) = {
+      		post: "/resource"
+			body: "*"
+   		};
+	}
+	rpc List (ListResourceRequest) returns (stream Resource) {
+		// https://github.com/grpc-ecosystem/grpc-gateway does not support stream response yet.
+	}
+	rpc GetAll (GetResourceRequest) returns (ResourceList) {
+		option (google.api.http) = {
+      		get: "/resource"
+   		};
+	}
+	rpc Get (GetResourceRequest) returns (Resource) {
+		option (google.api.http) = {
+      		get: "/resource/{resourceId}"
+   		};
+	}
+	rpc Delete (DeleteResourceRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+      		delete: "/resource/{resourceId}"
+   		};
+	}
+}

@@ -1,0 +1,89 @@
+version: "3"
+
+services:
+  traefik:
+    image: traefik:v2.0
+    command: --api.insecure=true --providers.docker
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "5778:5778"
+      - "14268:14268"
+      - "9411:9411"
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+    labels:
+      - "traefik.http.routers.jaeger.rule=Host(`jaeger.localhost`)"
+    environment:
+      COLLECTOR_ZIPKIN_HTTP_PORT: 9411
+
+  dashboard:
+    build:
+      context: dashboard
+      dockerfile: Dockerfile
+    labels:
+      - "traefik.http.routers.dashboard.rule=Host(`dashboard.localhost`)"
+    depends_on:
+      - traefik
+      - gateway
+
+  gateway:
+    build:
+      context: gateway
+      dockerfile: Dockerfile
+    labels:
+      - "traefik.http.routers.gateway.rule=Host(`gateway.localhost`)"
+    depends_on:
+      - jaeger
+      - service
+
+  service:
+    build:
+      context: service
+      dockerfile: Dockerfile
+    labels:
+      - "traefik.http.routers.service.rule=Host(`service.localhost`)"
+    depends_on:
+      - jaeger
+      - storage
+      - nats
+
+  storage:
+    build:
+      context: storage
+      dockerfile: Dockerfile
+    labels:
+      - "traefik.http.routers.storage.rule=Host(`storage.localhost`)"
+    depends_on:
+      - jaeger
+      - cockroach
+
+  worker:
+    build:
+      context: worker
+      dockerfile: Dockerfile
+    depends_on:
+      - jaeger
+      - nats
+
+  cockroach:
+    image: cockroachdb/cockroach:latest
+    ports:
+      - "26257:26257"
+      - "9090:8080"
+    command: start --insecure
+
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+      - "6222:6222"
+      - "8222:8222"

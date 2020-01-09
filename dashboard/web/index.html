@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OpenTracing - Demo</title>
+</head>
+<body onload="load()">
+<h1>Dashboard</h1>
+
+<h2>
+    <a href="http://jaeger.localhost:16686" target="_blank">Jaeger</a>
+</h2>
+<hr>
+
+<div>
+    <h3>Storage - list resource</h3>
+    <pre><code id="storage-output"></code></pre>
+    <button type="button" onclick="load()">Refresh</button>
+</div>
+
+<hr>
+
+<div>
+    <h3>Create new resource</h3>
+    <form>
+        <label for="value">Value:</label>
+        <input id="value" type="text"><br>
+        <br>
+        <button type="button" onclick="call()">FIRE</button>
+    </form>
+</div>
+
+<hr>
+
+<ul id="list"></ul>
+</body>
+<script>
+    const value = document.querySelector("#value");
+    const list = document.querySelector("#list");
+
+    function call() {
+        return fetch('http://gateway.localhost:80/', {
+            method: "POST",
+            body: JSON.stringify({value: value.value})
+        }).then(resp => resp.text()).then(text => {
+            let entry = document.createElement("LI");
+            entry.innerText = text;
+            list.insertBefore(entry, list.firstChild);
+        }).then(() => load()).catch(err => console.error(err));
+    }
+
+
+    const storage_output = document.querySelector("#storage-output");
+
+    function load() {
+        return fetch('http://storage.localhost:80/resource').then(resp => resp.json()).then(json => {
+            storage_output.innerHTML = JSON.stringify(json, null, 2);
+        }).catch(err => console.error(err));
+    }
+</script>
+</html>
