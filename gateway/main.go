@@ -115,6 +115,7 @@ func main() {
 		log.Printf("Could not initialize jaeger transport: %s", err.Error())
 		return
 	}
+	defer transport.Close()
 
 	reporter := jaeger.NewRemoteReporter(transport)
 	defer reporter.Close()
@@ -139,17 +140,15 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}).Handler)
-	mux.Use(func(handler http.Handler) http.Handler {
-		return nethttp.Middleware(
-			tracer,
-			handler,
-			nethttp.OperationNameFunc(func(r *http.Request) string {
-				return fmt.Sprintf("%s %s %s", r.Proto, r.Method, r.URL.Path)
-			}),
-		)
-	})
 	mux.Post("/", apiHandler())
 
 	fmt.Println("starting at http://gateway.localhost")
-	log.Fatal(http.ListenAndServe(":http", mux))
+	h := nethttp.Middleware(tracer, mux,
+		nethttp.OperationNameFunc(func(r *http.Request) string {
+			return fmt.Sprintf("%s %s %s", r.Proto, r.Method, r.URL.Path)
+		}),
+	)
+	if err := http.ListenAndServe(":http", h); err != http.ErrServerClosed {
+		panic(err)
+	}
 }

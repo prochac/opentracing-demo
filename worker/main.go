@@ -6,14 +6,11 @@ import (
 	"log"
 	"time"
 
-	jaegerlog "github.com/opentracing/opentracing-go/log"
-
-	"github.com/nats-io/not.go"
-
-	"github.com/opentracing/opentracing-go/ext"
-
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/not.go"
 	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+	jaegerlog "github.com/opentracing/opentracing-go/log"
 	"github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 )
